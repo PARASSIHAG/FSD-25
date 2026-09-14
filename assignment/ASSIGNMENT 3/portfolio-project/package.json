@@ -1,0 +1,12 @@
+{
+  "name": "express-portfolio",
+  "version": "1.0.0",
+  "description": "My Portfolio using HTML, CSS, and Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
