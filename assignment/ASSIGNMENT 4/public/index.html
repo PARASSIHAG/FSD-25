@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Problem Requests</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+        form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        .request-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Submit a Campus Request</h1>
+    
+    <form id="requestForm">
+        <input type="hidden" id="editId">
+        <input type="text" id="name" placeholder="Student Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="text" id="category" placeholder="Category" required>
+        <textarea id="description" placeholder="Problem Description" required></textarea>
+        <select id="priority" required>
+            <option value="" disabled selected>Select Priority</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+        <button type="submit" id="submitBtn">Submit Request</button>
+    </form>
+
+    <h2>Submitted Requests</h2>
+    <div id="requestsList"></div>
+
+    <script>
+        const API_URL = '/api/requests';
+
+        // Get all requests
+        async function fetchRequests() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            const list = document.getElementById('requestsList');
+            
+            list.innerHTML = data.map(req => `
+                <div class="request-card">
+                    <strong>${req.name}</strong> (${req.email}) - Priority: <em>${req.priority}</em>
+                    <p><strong>${req.category}:</strong> ${req.description}</p>
+                    <button onclick="loadEditForm(${req.id})">Edit</button>
+                    <button onclick="deleteRequest(${req.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        // Submit (Create) or Update request
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            
+            const payload = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                priority: document.getElementById('priority').value
+            };
+
+            if (id) {
+                // Update existing request
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                document.getElementById('editId').value = '';
+                document.getElementById('submitBtn').innerText = 'Submit Request';
+            } else {
+                // Create new request
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            
+            e.target.reset();
+            fetchRequests();
+        });
+
+        // Delete a request
+        async function deleteRequest(id) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            fetchRequests();
+        }
+
+        // Load data into form for updating
+        async function loadEditForm(id) {
+            const res = await fetch(`${API_URL}/${id}`);
+            const req = await res.json();           
+            document.getElementById('editId').value = req.id;
+            document.getElementById('name').value = req.name;
+            document.getElementById('email').value = req.email;
+            document.getElementById('category').value = req.category;
+            document.getElementById('description').value = req.description;
+            document.getElementById('priority').value = req.priority;
+            
+            document.getElementById('submitBtn').innerText = 'Update Request';
+        }
+        // Initial load
+        fetchRequests();
+    </script>
+</body>
+</html>
